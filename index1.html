@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WiFi Hack Simulator (ratan)</title>
+
+<style>
+:root{
+  --neon:#00ff9d;
+  --blue:#00c8ff;
+  --pink:#ff3df0;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:radial-gradient(1200px 600px at 10% 10%, #07151f, #020406);
+  color:#cfefff;
+  font-family: ui-monospace, Consolas, monospace;
+  min-height:100vh;
+  overflow:hidden;
+}
+.particles{position:fixed; inset:0; pointer-events:none}
+.p{
+  position:absolute;width:2px;height:2px;
+  background:var(--neon);opacity:.8;
+  animation:float 10s linear infinite
+}
+@keyframes float{
+  from{transform:translateY(110vh)}
+  to{transform:translateY(-10vh)}
+}
+.wrap{max-width:900px;margin:auto;padding:24px;position:relative;z-index:2}
+.card{
+  background:linear-gradient(180deg,rgba(10,20,30,.9),rgba(5,10,15,.9));
+  border:1px solid rgba(0,200,255,.25);
+  border-radius:18px;
+  padding:18px;
+}
+.header{display:flex;gap:12px;align-items:center}
+.logo{
+  width:48px;height:48px;border-radius:12px;
+  background:#000 url('ratan.png') center/cover no-repeat;
+  box-shadow:0 0 18px var(--pink)
+}
+.title{font-size:22px;color:var(--neon)}
+.badge{margin-left:auto;font-size:12px;color:var(--pink)}
+.input{display:flex;gap:10px;margin:16px 0}
+input{
+  flex:1;background:#02080e;color:#cfefff;
+  border:1px solid rgba(0,200,255,.35);
+  border-radius:12px;padding:12px
+}
+button{
+  background:linear-gradient(90deg,var(--neon),var(--blue));
+  border:none;border-radius:12px;
+  padding:12px 16px;font-weight:700;cursor:pointer
+}
+button:disabled{opacity:.6}
+.term{
+  background:#010407;
+  height:340px;
+  overflow-y:auto;
+  padding:14px;
+  border-radius:14px;
+}
+.line{white-space:pre-wrap}
+.ok{color:#7cff7c}
+.warn{color:#ffd27c}
+.err{color:#ff7c7c}
+.glow{text-shadow:0 0 8px currentColor}
+</style>
+</head>
+
+<body>
+
+<div class="particles" id="particles"></div>
+
+<div class="wrap">
+<div class="card">
+
+<div class="header">
+  <div class="logo"></div>
+  <div class="title">WiFi Hack Simulator (ratan)</div>
+  <div class="badge">wifi • hack</div>
+</div>
+
+<div class="input">
+  <input id="ssid" placeholder="Enter your WiFi name (SSID)">
+  <button id="start">Start Hack</button>
+</div>
+
+<div class="term" id="term"></div>
+
+</div>
+</div>
+
+<script>
+// particles
+const pWrap=document.getElementById('particles');
+for(let i=0;i<120;i++){
+  const d=document.createElement('div');
+  d.className='p';
+  d.style.left=Math.random()*100+'%';
+  d.style.animationDuration=(6+Math.random()*10)+'s';
+  pWrap.appendChild(d);
+}
+
+const term=document.getElementById('term');
+const btn=document.getElementById('start');
+const ssidInput=document.getElementById('ssid');
+
+// 🔊 sound
+function sound(type='type'){
+  try{
+    const c=new(AudioContext||webkitAudioContext)();
+    const o=c.createOscillator();
+    const g=c.createGain();
+    if(type==='error') o.frequency.value=220;
+    else if(type==='success') o.frequency.value=1300;
+    else o.frequency.value=900;
+    g.gain.value=0.04;
+    o.connect(g); g.connect(c.destination);
+    o.start();
+    setTimeout(()=>{o.stop();c.close()}, type==='error'?200:60);
+  }catch(e){}
+}
+
+// 📱 vibration
+function vibrate(p){
+  if(navigator.vibrate) navigator.vibrate(p);
+}
+
+// ⌨️ typing
+function typeLine(text,cls='',speed=28){
+  return new Promise(res=>{
+    const d=document.createElement('div');
+    d.className='line '+cls;
+    term.appendChild(d);
+    let i=0;
+    const iv=setInterval(()=>{
+      if(i>=text.length){clearInterval(iv);res();return;}
+      d.textContent+=text[i++];
+      sound();
+      term.scrollTop=term.scrollHeight;
+    },speed);
+  });
+}
+
+// 🌐 fake IP
+async function showIP(){
+  const ip=Array.from({length:4},()=>Math.floor(Math.random()*255)).join('.');
+  const d=document.createElement('div');
+  d.className='line glow';
+  term.appendChild(d);
+  let t='';
+  for(const c of ip){
+    t+=c;
+    d.textContent='> Target IP: '+t;
+    sound();
+    await new Promise(r=>setTimeout(r,80));
+  }
+}
+
+btn.onclick=async()=>{
+  term.innerHTML='';
+  const ssid=ssidInput.value.trim();
+
+  if(!ssid){
+    await typeLine('> ERROR: SSID required','err glow');
+    sound('error');
+    return;
+  }
+
+  // ❌ OTHER WIFI NAME → FAKE DEVELOPER TRACE
+  if(ssid!=='Mmmm'){
+    btn.disabled=true;
+
+    await typeLine(`> Target SSID: ${ssid}`,'warn glow');
+    await typeLine('> Scanning network...');
+    await typeLine('> Checking permissions...');
+    await typeLine('> Verifying license...');
+    await typeLine('> WARNING: Unauthorized SSID','err glow');
+    vibrate(300);
+
+    await typeLine('> Tracing developer identity...');
+    await typeLine('> Facebook profile detected','ok glow');
+    await typeLine('> Developer: RATAN MAJUMDER','ok glow');
+
+    const link=document.createElement('div');
+    link.className='line ok glow';
+    link.innerHTML =
+      `> <button onclick="window.open('https://www.facebook.com/profile.php?id=61552305287329','_blank')">
+         Contact Developer
+       </button>`;
+    term.appendChild(link);
+
+    btn.disabled=false;
+    return;
+  }
+
+  // ✅ Mmmm → FULL HACK FLOW
+  btn.disabled=true;
+
+  await typeLine(`> Target SSID: ${ssid}`,'ok glow');
+  await typeLine('> Initializing core modules...');
+  await typeLine('> Allocating memory buffers...');
+  await typeLine('> Syncing drivers...');
+  await typeLine('> Loading packets █▒▒▒▒▒▒▒▒▒');
+  await typeLine('> Loading packets ███▒▒▒▒▒▒▒');
+  await typeLine('> Loading packets █████▒▒▒▒▒');
+  await typeLine('> Loading packets ███████▒▒▒');
+  await typeLine('> Loading packets ██████████');
+  await typeLine('> Brute-force engine: ONLINE','glow');
+
+  await showIP();
+
+  await typeLine('> ERROR: Handshake failed','err glow');
+  sound('error'); vibrate(300);
+  await typeLine('> RETRYING...','warn glow');
+  await typeLine('> SUCCESS: Handshake captured','ok glow');
+  sound('success'); vibrate([100,50,100,50,200]);
+
+  const final=[
+    '> Capturing handshake [1/5]',
+    '> Capturing handshake [2/5]',
+    '> Capturing handshake [3/5]',
+    '> Capturing handshake [4/5]',
+    '> Capturing handshake [5/5]',
+    '> Cracking keyspace...',
+    '> Testing wordlists...',
+    '> Refining entropy...',
+    '> Decrypting blocks...',
+    '> Verifying checksum...',
+    '> Almost there...',
+    '> Success!',
+    '',
+    'Scanned Data',
+    'SSID: Mmmm',
+    'Password: update deoa lagbe rintu xodon ajke diya rakbani',
+    'Network Type: WPA',
+    'Hidden: No',
+    '> 🔥 RATAN MAJUMDER ALWAYS TOP 🔥'
+  ];
+
+  for(const l of final){
+    await new Promise(r=>setTimeout(r,500));
+    await typeLine(l,'ok glow');
+  }
+
+  btn.disabled=false;
+};
+</script>
+
+</body>
+</html>
